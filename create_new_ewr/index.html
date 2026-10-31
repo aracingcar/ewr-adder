@@ -52,7 +52,7 @@
 <div class="wrap">
 <header><a href="https://aracingcar.github.io/">← aracingcar / projects</a><a href="https://github.com/MDBAuth/EWR_tool">MDBAuth/EWR_tool ↗</a></header>
 <h1>EWR adder</h1>
-<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated and appended as <code>U_</code> rows. Download the merged sheet for use with <code>py_ewr</code>. Everything runs in your browser; nothing is uploaded.</p>
+<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated in your browser and appended as <code>U_</code> rows, with a matching <code>ewr_calc_config.json</code> entry. Then either download the merged files to use with <code>py_ewr</code> yourself, or <strong>Submit to repository</strong> to propose the rule: that opens a pre-filled GitHub issue (you need a GitHub account), and a workflow re-checks it and opens a pull request for review. Nothing is sent anywhere until you press Submit on that issue.</p>
 <div class="stats" aria-live="polite">
   <div class="stat" id="sBase">–<small>upstream rows</small></div>
   <div class="stat" id="sMine">0<small>rows you added</small></div>
@@ -87,7 +87,7 @@
 <div>
 <section><h2>Your EWRs</h2><div id="mine"><span class="hint">None yet.</span></div>
   <div class="bar" style="margin-top:12px"><button type="button" id="dlCsv" disabled>Download merged sheet (CSV)</button><button type="button" id="dlCfg" disabled>Download calc config (JSON)</button><button type="button" id="submitPr" disabled>Submit to repository</button><button type="button" class="ghost" id="dlJson" disabled>Export definitions (JSON)</button><button type="button" class="ghost" id="imp">Import JSON</button><input type="file" id="impFile" accept=".json,application/json" hidden></div>
-  <p class="hint">Definitions are remembered in this browser only. The CSV is written as Windows-1252, as py_ewr reads it; point py_ewr at it with the <code>parameter_sheet</code> argument of its evaluation functions (and the calc config with <code>calc_config_path</code>), or replace <code>py_ewr/parameter_metadata/parameter_sheet.csv</code>.</p>
+  <p class="hint">Definitions are remembered in this browser only. <b>Download merged sheet</b> and <b>Download calc config</b> give the two files py_ewr needs: pass them as the <code>parameter_sheet</code> and <code>calc_config_path</code> arguments of its evaluation functions. The CSV is written as Windows-1252, as py_ewr reads it. <b>Submit to repository</b> proposes the rules for inclusion upstream via an issue and an automatic pull request; very large submissions are copied to your clipboard to paste into the issue instead. <b>Export / Import JSON</b> saves and restores your definitions.</p>
 </section>
 <section><h2>Parameter sheet preview</h2>
   <div class="bar" style="margin-bottom:8px"><input id="filter" placeholder="Filter by gauge, code or planning unit" style="max-width:320px"><label style="margin:0"><input type="checkbox" id="onlyMine" style="width:auto"> only my rows</label></div>
