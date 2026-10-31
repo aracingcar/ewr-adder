@@ -117,3 +117,19 @@ function indexSheet(text){
   const g=col("Gauge"),pu=col("PlanningUnitName");
   for(const r of BASE){if(!byGauge.has(r[g]))byGauge.set(r[g],new Map());if(!byGauge.get(r[g]).has(r[pu]))byGauge.get(r[g]).set(r[pu],r);codes.add(r[col("Code")]);for(const o of r[col("EcoObj")].split("+"))if(o)objs.add(o);}
 }
+
+// ---- calc config ----------------------------------------------------------------------------------------------------
+// py_ewr finds the handler for a row via "<Code>-<single|multigauge>-<F|V|L>" listed under the handler in ewr_calc_config.json.
+const calcKey=s=>`${s.code}-${s.second_gauge?"multigauge":"single"}-${s.kind==="S"?"F":s.kind}`;
+// Inserts each spec's key into its handler's list by editing the JSON text, so the rest of the file is left byte-for-byte alone.
+function addCalcEntries(text,specs){
+  for(const s of specs){
+    const head=`"${s.handler}": [`, i=text.indexOf(head);
+    if(i<0)throw new Error("calc config has no handler "+s.handler);
+    const j=text.indexOf("]",i), key=calcKey(s);
+    if(text.slice(i,j).includes(`"${key}"`))continue;
+    const end=text.lastIndexOf('"',j)+1;
+    text=text.slice(0,end)+`,\n        "${key}"`+text.slice(end);
+  }
+  JSON.parse(text);return text;
+}

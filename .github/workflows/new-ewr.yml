@@ -39,7 +39,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add py_ewr/parameter_metadata/parameter_sheet.csv create_new_ewr/parameter_sheet.csv
+          git add py_ewr/parameter_metadata/parameter_sheet.csv create_new_ewr/parameter_sheet.csv \
+            py_ewr/parameter_metadata/ewr_calc_config.json create_new_ewr/ewr_calc_config.json
           git commit -m "Add user-defined EWR(s): $CODES"
           git push origin "$branch"
           printf '%s\n\nCloses #%s\n' "$(cat result.md)" "${{ github.event.issue.number }}" > body.md

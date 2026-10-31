@@ -86,8 +86,8 @@
 </div>
 <div>
 <section><h2>Your EWRs</h2><div id="mine"><span class="hint">None yet.</span></div>
-  <div class="bar" style="margin-top:12px"><button type="button" id="dlCsv" disabled>Download merged sheet (CSV)</button><button type="button" id="submitPr" disabled>Submit to repository</button><button type="button" class="ghost" id="dlJson" disabled>Export definitions (JSON)</button><button type="button" class="ghost" id="imp">Import JSON</button><input type="file" id="impFile" accept=".json,application/json" hidden></div>
-  <p class="hint">Definitions are remembered in this browser only. The CSV is written as Windows-1252, as py_ewr reads it; point py_ewr at it with the <code>parameter_sheet</code> argument of its evaluation functions, or replace <code>py_ewr/parameter_metadata/parameter_sheet.csv</code>.</p>
+  <div class="bar" style="margin-top:12px"><button type="button" id="dlCsv" disabled>Download merged sheet (CSV)</button><button type="button" id="dlCfg" disabled>Download calc config (JSON)</button><button type="button" id="submitPr" disabled>Submit to repository</button><button type="button" class="ghost" id="dlJson" disabled>Export definitions (JSON)</button><button type="button" class="ghost" id="imp">Import JSON</button><input type="file" id="impFile" accept=".json,application/json" hidden></div>
+  <p class="hint">Definitions are remembered in this browser only. The CSV is written as Windows-1252, as py_ewr reads it; point py_ewr at it with the <code>parameter_sheet</code> argument of its evaluation functions (and the calc config with <code>calc_config_path</code>), or replace <code>py_ewr/parameter_metadata/parameter_sheet.csv</code>.</p>
 </section>
 <section><h2>Parameter sheet preview</h2>
   <div class="bar" style="margin-bottom:8px"><input id="filter" placeholder="Filter by gauge, code or planning unit" style="max-width:320px"><label style="margin:0"><input type="checkbox" id="onlyMine" style="width:auto"> only my rows</label></div>
@@ -102,7 +102,7 @@
 <script>
 "use strict";
 const STORE="ewrAdderSpecs";
-let editing=null;
+let editing=null, CALC=null;
 // ---- UI -----------------------------------------------------------------------------------------------------------
 const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(specs));}catch{}};
 function renderParams(vals={}){
@@ -127,7 +127,7 @@ function showErrors(e){document.querySelectorAll("[data-e]").forEach(n=>{n.textC
 function renderMine(){
   $("mine").innerHTML=specs.length?[...specs].sort((a,b)=>a.code<b.code?-1:1).map(s=>`<div class="mine"><div><span class="chip">${esc(s.code)}</span> ${esc(s.name)}<div class="hint">Gauge ${esc(s.gauge)} · ${s.pus.length} planning unit${s.pus.length>1?"s":""} · ${esc(HANDLERS[s.kind][s.handler][0])}</div></div><div class="bar"><button type="button" class="ghost" data-edit="${s.id}">Edit</button><button type="button" class="ghost" data-del="${s.id}">Delete</button></div></div>`).join(""):'<span class="hint">None yet.</span>';
   const n=myRows().length;$("sMine").firstChild.textContent=n;$("sTotal").firstChild.textContent=(BASE.length+n).toLocaleString();
-  $("dlCsv").disabled=$("dlJson").disabled=$("submitPr").disabled=!specs.length;renderTable();}
+  $("dlCsv").disabled=$("dlJson").disabled=$("submitPr").disabled=$("dlCfg").disabled=!specs.length;renderTable();}
 function renderTable(){
   const q=$("filter").value.trim().toLowerCase(),only=$("onlyMine").checked,cols=["Code","Gauge","PlanningUnitName","FlowLevelVolume","StartMonth","EndMonth","Duration","MinSpell","FlowThresholdMin","FlowThresholdMax","TargetFrequency","EventsPerYear"],ix=cols.map(col);
   $("thead").innerHTML=cols.map(c=>`<th>${c}</th>`).join("");
@@ -148,6 +148,7 @@ async function init(){
     catch{buf=await (await fetch("https://raw.githubusercontent.com/MDBAuth/EWR_tool/main/py_ewr/parameter_metadata/parameter_sheet.csv")).arrayBuffer();}
     indexSheet(new TextDecoder("windows-1252").decode(buf));}
   catch{$("loadErr").textContent="Could not load the parameter sheet.";return;}
+  try{CALC=await (await fetch("ewr_calc_config.json")).text();}catch{CALC=null;}
   $("gaugeList").innerHTML=[...byGauge].map(([id,m])=>`<option value="${esc(id)}">${esc([...m.values()][0][col("CompliancePoint/Node")])}</option>`).join("");
   $("objList").innerHTML=[...objs].sort().map(o=>`<option value="${esc(o)}">`).join("");
   $("sBase").firstChild.textContent=BASE.length.toLocaleString();
@@ -168,6 +169,7 @@ $("mine").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!
 $("filter").oninput=renderTable;$("onlyMine").onchange=renderTable;
 $("dlCsv").onclick=()=>download("parameter_sheet_with_user_ewrs.csv",cp1252(toCsv([HEAD,...BASE,...myRows().map(x=>x.r)])),"text/csv");
 $("dlJson").onclick=()=>download("user_ewrs.json",JSON.stringify({format:"ewr-adder-definitions",version:1,specs},null,2),"application/json");
+$("dlCfg").onclick=()=>{if(!CALC){say("Could not load ewr_calc_config.json.");return;}download("ewr_calc_config_with_user_ewrs.json",addCalcEntries(CALC,specs),"application/json");};
 const REPO="aracingcar/ewr-adder";
 $("submitPr").onclick=async()=>{
   const defs=JSON.stringify({format:"ewr-adder-definitions",version:1,specs}),
