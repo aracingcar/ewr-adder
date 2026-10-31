@@ -95,7 +95,7 @@ function validate(d){
       if(Math.abs(v-Math.round(v))>1e-9)e["params."+k]="Converted EC must be a whole number";else if(v>MAXP)e["params."+k]="Converted EC is too large";else p[k]=Math.round(v);}
       sal={unit:"EC",tds_factor:fac};}}
   else if(d.salinity)e.salinity="Only salinity rules take salinity units";
-  if(Object.keys(e).length)return {e,spec:null};
+  if(Object.keys(e).length)return {e,spec:null,params:p};
   return {e,spec:{id:d.id||"u_"+Math.random().toString(36).slice(2,14),code:d.code,name:d.name.trim(),kind,handler:d.handler,gauge:d.gauge,second_gauge:second,pus:[...new Set(d.pus)],objectives:[...new Set(d.objectives||[])],params:p,salinity:sal}};
 }
 function rowsFor(spec){

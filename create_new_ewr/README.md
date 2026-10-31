@@ -9,6 +9,11 @@ A browser page for defining new, user-defined (`U_`) environmental water require
 - Lets you pick a gauge, planning units, objectives, a rule type and its parameters, and validates everything
   (code format and uniqueness, bounds, timing windows, handler-specific requirements, salinity conversion).
 - Shows the resulting parameter-sheet rows live, highlighted in a preview of the merged sheet.
+- **How this EWR works** explains a rule in plain words and, for continuous-spell and total-days rules (`flow_handle`, `lowflow_handle`),
+  plays an animated walkthrough: the threshold, the window, the duration, a year that misses, the frequency target and ratio, and the
+  maximum gap between events. It follows the rule in the form as you type; click a code in the sheet preview, or **Explain** on one of
+  your EWRs, to see any other. The walkthrough's flow record is illustrative, generated from the EWR's own parameters, not gauge data.
+  Ported from the EWR guide in [aracingcar/ewr-analysis-dashboard](https://github.com/aracingcar/ewr-analysis-dashboard) (`src/ewr_guide.js`).
 - **Deleting existing rows:** each row of the preview has a Delete button (and a filtered view can mark all matching rows). Rows are identified by Code + Gauge + PlanningUnitID, shown struck through until submitted, listed under "Marked for deletion" with Undo, and limited to 500 per submission. If a code loses all its rows, its `ewr_calc_config.json` keys are removed too and the code can be reused.
 - **Download merged sheet (CSV)** and **Download calc config (JSON)** produce the two files py_ewr needs. Use them via the
   `parameter_sheet` and `calc_config_path` arguments of its evaluation functions. The CSV is Windows-1252, as py_ewr reads it.
@@ -21,6 +26,7 @@ A browser page for defining new, user-defined (`U_`) environmental water require
 | --- | --- |
 | `index.html` | The page and its UI. |
 | `ewr-core.js` | CSV parsing, validation, row building and calc-config editing. Shared with the workflow script. |
+| `ewr-guide.js` | The "How this EWR works" explanations and animated walkthroughs. |
 | `parameter_sheet.csv`, `ewr_calc_config.json` | Copies of the upstream files, kept in step by the workflow. |
 
 Serve locally with `python3 -m http.server --directory create_new_ewr`.

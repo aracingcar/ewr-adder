@@ -6,9 +6,9 @@
 <meta name="description" content="Add your own EWR to the MDBA EWR tool parameter sheet, live in the browser.">
 <title>EWR adder</title>
 <style>
-  :root { color-scheme:light dark; --paper:#f3f1eb; --card:#fffdf8; --ink:#242b2d; --muted:#6b7573; --line:#d9ddd5; --green:#315d50; --blue:#547b91; --bad:#a3322b; --new:#e4efe6; --serif:Georgia,'Times New Roman',serif; --sans:Inter,'Avenir Next',Avenir,'Segoe UI',sans-serif; }
+  :root { color-scheme:light dark; --paper:#f3f1eb; --card:#fffdf8; --ink:#242b2d; --muted:#6b7573; --line:#d9ddd5; --green:#315d50; --blue:#547b91; --bad:#a3322b; --amber:#a8611b; --new:#e4efe6; --serif:Georgia,'Times New Roman',serif; --sans:Inter,'Avenir Next',Avenir,'Segoe UI',sans-serif; }
   :root:not([data-theme=light]) { }
-  @media (prefers-color-scheme:dark) { :root:not([data-theme=light]) { --paper:#171c1b; --card:#202726; --ink:#e7ebe8; --muted:#9aa5a2; --line:#323b39; --green:#7fb69f; --blue:#86a9bd; --bad:#ef8f86; --new:#24382e; } }
+  @media (prefers-color-scheme:dark) { :root:not([data-theme=light]) { --paper:#171c1b; --card:#202726; --ink:#e7ebe8; --muted:#9aa5a2; --line:#323b39; --green:#7fb69f; --blue:#86a9bd; --bad:#ef8f86; --amber:#e3a35f; --new:#24382e; } }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.5 var(--sans); }
   .wrap { width:min(1180px,calc(100% - 32px)); margin:0 auto; }
@@ -17,7 +17,7 @@
   h1 { font:400 clamp(30px,5vw,48px)/1.05 var(--serif); letter-spacing:-.03em; margin:34px 0 10px; }
   .lede { max-width:680px; color:var(--muted); margin:0 0 26px; }
   .grid { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:22px; align-items:start; }
-  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+  @media (max-width:900px) { .grid { grid-template-columns:minmax(0,1fr); } }
   section { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:18px; }
   h2 { font:600 12px/1 var(--sans); letter-spacing:.12em; text-transform:uppercase; color:var(--green); margin:0 0 14px; }
   label { display:block; font-size:12px; color:var(--muted); margin:0 0 3px; }
@@ -47,6 +47,17 @@
   .stat { font:400 26px/1 var(--serif); } .stat small { font:12px var(--sans); color:var(--muted); display:block; margin-top:4px; }
   .stats { display:flex; gap:28px; flex-wrap:wrap; margin-bottom:6px; }
   footer { color:var(--muted); font-size:12px; padding:14px 0 34px; border-top:1px solid var(--line); }
+  .gwhat { margin:0 0 6px; font-size:13px; }
+  .gstage { font-size:12px; color:var(--muted); margin:6px 0 2px; }
+  .gcap { font-size:13px; line-height:1.45; min-height:3.9em; margin-bottom:4px; }
+  .gsvg { width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:6px; background:var(--card); font-family:var(--sans); }
+  .gctl { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; } .gctl button[data-a] { padding:4px 10px; }
+  .gdots { display:inline-flex; gap:6px; margin-left:auto; } .gdots button { width:10px; height:10px; padding:0; border-radius:50%; background:var(--line); border:0; }
+  .gdots button.on { background:var(--green); transform:scale(1.25); } .gdots button.done { background:var(--blue); opacity:.6; }
+  .gdev { margin:8px 0; padding:10px 12px; border:1px dashed var(--line); border-radius:6px; font-size:13px; }
+  .gnote { font-size:11.5px; color:var(--muted); margin-top:6px; }
+  #guideHead { justify-content:space-between; margin:-4px 0 8px; }
+  td button.link { padding:0; border:0; background:none; color:var(--green); text-decoration:underline dotted; cursor:pointer; font:inherit; }
   [hidden] { display:none!important; }
 </style>
 </head>
@@ -54,7 +65,7 @@
 <div class="wrap">
 <header><a href="https://aracingcar.github.io/">← aracingcar / projects</a><a href="https://github.com/MDBAuth/EWR_tool">MDBAuth/EWR_tool ↗</a></header>
 <h1>EWR adder</h1>
-<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated in your browser and appended as <code>U_</code> rows, with a matching <code>ewr_calc_config.json</code> entry. You can also remove existing rows: use <strong>Delete</strong> in the preview table. Then either download the merged files to use with <code>py_ewr</code> yourself, or <strong>Submit to repository</strong> to propose the rule: that opens a pre-filled GitHub issue (you need a GitHub account), and a workflow re-checks it and opens a pull request for review. Nothing is sent anywhere until you press Submit on that issue.</p>
+<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated in your browser and appended as <code>U_</code> rows, with a matching <code>ewr_calc_config.json</code> entry. You can also remove existing rows: use <strong>Delete</strong> in the preview table. Then either download the merged files to use with <code>py_ewr</code> yourself, or <strong>Submit to repository</strong> to propose the rule: that opens a pre-filled GitHub issue (you need a GitHub account), and a workflow re-checks it and opens a pull request for review. Nothing is sent anywhere until you press Submit on that issue. <strong>How this EWR works</strong> walks through what a rule asks for, as you type it or for any row of the sheet.</p>
 <div class="stats" aria-live="polite">
   <div class="stat" id="sBase">–<small>upstream rows</small></div>
   <div class="stat" id="sMine">0<small>rows you added</small></div>
@@ -88,6 +99,11 @@
 </form>
 </div>
 <div>
+<section id="guideSec"><h2>How this EWR works</h2>
+  <div class="bar" id="guideHead"><span class="hint" id="guideLabel"></span><button type="button" class="ghost" id="guideBack" hidden>Back to the rule I'm editing</button></div>
+  <div id="guide"></div>
+  <p class="hint">Click a code in the parameter sheet preview, or <b>Explain</b> on one of your EWRs, to see that EWR here.</p>
+</section>
 <section><h2>Your EWRs</h2><div id="mine"><span class="hint">None yet.</span></div><div id="pending"></div>
   <div class="bar" style="margin-top:12px"><button type="button" id="dlCsv" disabled>Download merged sheet (CSV)</button><button type="button" id="dlCfg" disabled>Download calc config (JSON)</button><button type="button" id="submitPr" disabled>Submit to repository</button><button type="button" class="ghost" id="dlJson" disabled>Export definitions (JSON)</button><button type="button" class="ghost" id="imp">Import JSON</button><input type="file" id="impFile" accept=".json,application/json" hidden></div>
   <p class="hint">Definitions are remembered in this browser only. <b>Download merged sheet</b> and <b>Download calc config</b> give the two files py_ewr needs: pass them as the <code>parameter_sheet</code> and <code>calc_config_path</code> arguments of its evaluation functions. The CSV is written as Windows-1252, as py_ewr reads it. <b>Submit to repository</b> proposes the rules for inclusion upstream via an issue and an automatic pull request; very large submissions are copied to your clipboard to paste into the issue instead. <b>Export / Import JSON</b> saves and restores your definitions and pending deletions. Deleting every row of an EWR also removes its calc-config entries.</p>
@@ -102,6 +118,7 @@
 <footer>Parameter sheet from <a href="https://github.com/MDBAuth/EWR_tool">MDBAuth/EWR_tool</a> (see <code>create_new_ewr/parameter_sheet.csv</code>). This is an unofficial tool, not endorsed by the MDBA; a new rule is a definition for testing, not an approved environmental requirement.</footer>
 </div>
 <script src="ewr-core.js"></script>
+<script src="ewr-guide.js"></script>
 <script>
 "use strict";
 const STORE="ewrAdderSpecs", DSTORE="ewrAdderDeletions";
@@ -128,7 +145,7 @@ function showErrors(e){document.querySelectorAll("[data-e]").forEach(n=>{n.textC
   document.querySelectorAll("[data-p],#code,#name,#gauge").forEach(i=>i.removeAttribute("aria-invalid"));
   for(const k of Object.keys(e)){const i=k.startsWith("params.")?$("p_"+k.slice(7)):$(k);if(i)i.setAttribute("aria-invalid","true");}}
 function renderMine(){
-  $("mine").innerHTML=specs.length?[...specs].sort((a,b)=>a.code<b.code?-1:1).map(s=>`<div class="mine"><div><span class="chip">${esc(s.code)}</span> ${esc(s.name)}<div class="hint">Gauge ${esc(s.gauge)} · ${s.pus.length} planning unit${s.pus.length>1?"s":""} · ${esc(HANDLERS[s.kind][s.handler][0])}</div></div><div class="bar"><button type="button" class="ghost" data-edit="${s.id}">Edit</button><button type="button" class="ghost" data-del="${s.id}">Delete</button></div></div>`).join(""):'<span class="hint">None yet.</span>';
+  $("mine").innerHTML=specs.length?[...specs].sort((a,b)=>a.code<b.code?-1:1).map(s=>`<div class="mine"><div><span class="chip">${esc(s.code)}</span> ${esc(s.name)}<div class="hint">Gauge ${esc(s.gauge)} · ${s.pus.length} planning unit${s.pus.length>1?"s":""} · ${esc(HANDLERS[s.kind][s.handler][0])}</div></div><div class="bar"><button type="button" class="ghost" data-explain="${s.id}">Explain</button><button type="button" class="ghost" data-edit="${s.id}">Edit</button><button type="button" class="ghost" data-del="${s.id}">Delete</button></div></div>`).join(""):'<span class="hint">None yet.</span>';
   const n=myRows().length,live=liveBase().length;$("sMine").firstChild.textContent=n;$("sDel").firstChild.textContent=deletions.length;$("sTotal").firstChild.textContent=(live+n).toLocaleString();
   const byCode=new Map();for(const d of deletions)byCode.set(d.code,(byCode.get(d.code)||0)+1);
   $("pending").innerHTML=byCode.size?"<h3>Marked for deletion</h3>"+[...byCode].sort().map(([c,k])=>`<div class="mine"><div><span class="chip">${esc(c)}</span> <span class="hint">${k} row${k>1?"s":""}${gone.has(c)?" · whole EWR (its calc-config entries go too)":""}</span></div><button type="button" class="ghost" data-undo="${esc(c)}">Undo</button></div>`).join(""):"";
@@ -141,37 +158,65 @@ function renderTable(){
   const hit=q?all.filter(x=>x.r.some((v,i)=>[col("Code"),col("Gauge"),col("PlanningUnitName"),col("CompliancePoint/Node")].includes(i)&&v.toLowerCase().includes(q))):all;
   const show=(q||only?hit:[...mine].reverse().concat(BASE.map(B))).slice(0,300);
   const fresh=hit.filter(x=>!x.n&&!x.d);$("delAll").hidden=!q||only||!fresh.length;$("delAll").textContent=`Mark all ${fresh.length} matching rows for deletion`;$("delAll").dataset.n=fresh.length;
-  $("tbody").innerHTML=show.map(x=>`<tr class="${x.n?"new":x.d?"gone":""}"><td>${x.n?"":`<button type="button" class="ghost" data-row="${esc(rowKey(x.r))}">${x.d?"Undo":"Delete"}</button>`}</td>${ix.map(i=>`<td>${esc(x.r[i])}</td>`).join("")}</tr>`).join("");
+  shownRows=show;
+  $("tbody").innerHTML=show.map((x,k)=>`<tr class="${x.n?"new":x.d?"gone":""}"><td>${x.n?"":`<button type="button" class="ghost" data-row="${esc(rowKey(x.r))}">${x.d?"Undo":"Delete"}</button>`}</td>${ix.map(i=>`<td>${i===ix[0]?`<button type="button" class="link" data-explain="${k}" title="How this EWR works">${esc(x.r[i])}</button>`:esc(x.r[i])}</td>`).join("")}</tr>`).join("");
   $("shown").textContent=`Showing ${show.length.toLocaleString()} of ${(q||only?hit.length:all.length).toLocaleString()} rows.`+(mine.length?" Your rows are highlighted.":"");}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function say(t){$("msg").textContent=t;}
 function load(spec){editing=spec.id;$("gauge").value=spec.gauge;fillPus(spec.pus);$("objectives").value=spec.objectives.join(", ");$("code").value=spec.code;$("name").value=spec.name;$("kind").value=spec.kind;fillHandlers(spec.handler);$("second").value=spec.second_gauge||"";
   if(spec.salinity){$("salUnit").value="EC";$("salFactor").value=spec.salinity.tds_factor;}
-  renderParams(spec.params);$("add").textContent="Save changes";}
-function clearForm(){editing=null;$("form").reset();fillHandlers();fillPus();renderParams();showErrors({});$("add").textContent="Add to parameter sheet";say("");}
+  renderParams(spec.params);$("add").textContent="Save changes";guideSrc=null;renderGuide();}
+function clearForm(){editing=null;$("form").reset();fillHandlers();fillPus();renderParams();showErrors({});$("add").textContent="Add to parameter sheet";say("");renderGuide();}
+
+// ---- EWR guide ----------------------------------------------------------------------------------------------------
+let HANDLER_OF=new Map(), guideSrc=null, shownRows=[], guideTimer=0;   // guideSrc null = the rule in the form, else {row, label}
+const IDENT=new Set(["code","name","gauge","pus","objectives","second_gauge"]);
+function indexCalc(){try{for(const [h,keys] of Object.entries(JSON.parse(CALC)))for(const k of keys)HANDLER_OF.set(k,h);}catch{}}
+// A guide row for an upstream sheet row; its handler comes from the calc config, as py_ewr finds it.
+const sheetGuide=r=>guideRow(c=>r[col(c)],HANDLER_OF.get(`${r[col("Code")]}-${r[col("Multigauge")].trim()?"multigauge":"single"}-${r[col("FlowLevelVolume")]}`)||null);
+// A guide row for a user rule: identity from the form or spec, parameters as checked by validate().
+function specGuide(d,p){const base=byGauge.get(d.gauge)?.get(d.pus[0]),v={...p,Code:d.code||"U_…",Gauge:base?d.gauge:"","CompliancePoint/Node":base?base[col("CompliancePoint/Node")]:"",PlanningUnitName:d.pus.join(", "),State:base?base[col("State")]:"",EcoObj:d.objectives.join("+"),Multigauge:d.second_gauge||""};
+  if(p.StartDay!=null)v.StartMonth=p.StartMonth+"."+p.StartDay;if(p.EndDay!=null)v.EndMonth=p.EndMonth+"."+p.EndDay;
+  return guideRow(c=>v[c],d.handler,d.kind);}
+function renderGuide(o={}){
+  $("guideBack").hidden=!guideSrc;
+  if(guideSrc){$("guideLabel").textContent=guideSrc.label;EwrGuide.show($("guide"),guideSrc.row,o);return;}
+  $("guideLabel").textContent=editing?"The rule you are editing":"The rule in the form";
+  const d=read(),{e,spec,params}=validate(d);
+  // Show the draft as soon as its parameters are valid, even before the code, name or gauge are filled in.
+  const row=spec?specGuide(spec,spec.params):params&&Object.keys(e).every(k=>IDENT.has(k))?specGuide(d,params):null;
+  if(row)EwrGuide.show($("guide"),row,o);else EwrGuide.clear($("guide"),'<p class="hint">Fill in the rule\'s parameters (required days and target at least) to see how it works.</p>');}
+function explain(row,label){guideSrc={row,label};renderGuide({autoplay:true});$("guideSec").scrollIntoView({behavior:"smooth",block:"start"});}
+const specOf=code=>specs.find(s=>s.code===code);
 
 async function init(){
   try{let buf;try{buf=await (await fetch("parameter_sheet.csv")).arrayBuffer();}
     catch{buf=await (await fetch("https://raw.githubusercontent.com/MDBAuth/EWR_tool/main/py_ewr/parameter_metadata/parameter_sheet.csv")).arrayBuffer();}
     indexSheet(new TextDecoder("windows-1252").decode(buf));}
   catch{$("loadErr").textContent="Could not load the parameter sheet.";return;}
-  try{CALC=await (await fetch("ewr_calc_config.json")).text();}catch{CALC=null;}
+  try{CALC=await (await fetch("ewr_calc_config.json")).text();indexCalc();}catch{CALC=null;}
   $("gaugeList").innerHTML=[...byGauge].map(([id,m])=>`<option value="${esc(id)}">${esc([...m.values()][0][col("CompliancePoint/Node")])}</option>`).join("");
   $("objList").innerHTML=[...objs].sort().map(o=>`<option value="${esc(o)}">`).join("");
   $("sBase").firstChild.textContent=BASE.length.toLocaleString();
   try{setDeletions(checkDeletions(JSON.parse(localStorage.getItem(DSTORE)||"[]")).ok);}catch{setDeletions([]);}
   try{specs=JSON.parse(localStorage.getItem(STORE)||"[]").filter(s=>validate(s).spec);}catch{specs=[];}
-  fillHandlers();renderParams();renderMine();
+  fillHandlers();renderParams();renderMine();renderGuide();
 }
 $("gauge").addEventListener("input",()=>fillPus());
 $("kind").addEventListener("change",()=>{fillHandlers();renderParams();});
 $("handler").addEventListener("change",()=>{fillHandlers($("handler").value);renderParams(read().params);});
-$("form").addEventListener("input",()=>{if(!$("form").dataset.touched)return;showErrors(validate(read()).e);});
+$("form").addEventListener("input",()=>{if(!guideSrc){clearTimeout(guideTimer);guideTimer=setTimeout(()=>renderGuide({keepStep:true}),250);}
+  if(!$("form").dataset.touched)return;showErrors(validate(read()).e);});
+$("guideBack").onclick=()=>{guideSrc=null;renderGuide();};
+$("tbody").addEventListener("click",ev=>{const b=ev.target.closest("button[data-explain]");if(!b)return;const x=shownRows[+b.dataset.explain];if(!x)return;
+  const code=x.r[col("Code")],pu=x.r[col("PlanningUnitName")],s=x.n&&specOf(code);
+  explain(s?specGuide({...s,pus:[pu]},s.params):sheetGuide(x.r),`${code} · gauge ${x.r[col("Gauge")]} · ${pu}`);});
 $("form").addEventListener("submit",ev=>{ev.preventDefault();$("form").dataset.touched="1";const {e,spec}=validate(read());showErrors(e);
   if(!spec){say("Fix the highlighted fields.");return;}
   const i=specs.findIndex(s=>s.id===spec.id);if(i>=0)specs[i]=spec;else specs.push(spec);save();renderMine();const n=rowsFor(spec).length;clearForm();say(`${spec.code} saved: ${n} row(s) added to the parameter sheet.`);$("form").dataset.touched="";});
 $("clearBtn").onclick=clearForm;
 $("mine").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.explain){const s=specs.find(x=>x.id===b.dataset.explain);if(s)explain(specGuide(s,s.params),`${s.code} · ${s.name}`);}
   if(b.dataset.edit){const s=specs.find(x=>x.id===b.dataset.edit);if(s){load(s);$("form").dataset.touched="";window.scrollTo({top:0,behavior:"smooth"});}}
   if(b.dataset.del){const s=specs.find(x=>x.id===b.dataset.del);if(s&&confirm(`Delete ${s.code}? Its rows leave the merged sheet.`)){specs=specs.filter(x=>x!==s);save();renderMine();}}});
 const keyToDel=k=>{const [code,gauge,pu]=k.split("|");return {code,gauge,pu};};
