@@ -38,6 +38,8 @@
   table { border-collapse:collapse; width:100%; font-size:12px; }
   th,td { padding:4px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
   th { color:var(--muted); font-weight:600; position:sticky; top:0; background:var(--card); }
+  h3 { font:600 13px/1 var(--sans); margin:18px 0 4px; }
+  tr.gone td { text-decoration:line-through; color:var(--muted); }
   tr.new td { background:var(--new); }
   .scroll { max-height:340px; overflow:auto; border:1px solid var(--line); border-radius:5px; }
   .mine { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
@@ -52,10 +54,11 @@
 <div class="wrap">
 <header><a href="https://aracingcar.github.io/">← aracingcar / projects</a><a href="https://github.com/MDBAuth/EWR_tool">MDBAuth/EWR_tool ↗</a></header>
 <h1>EWR adder</h1>
-<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated in your browser and appended as <code>U_</code> rows, with a matching <code>ewr_calc_config.json</code> entry. Then either download the merged files to use with <code>py_ewr</code> yourself, or <strong>Submit to repository</strong> to propose the rule: that opens a pre-filled GitHub issue (you need a GitHub account), and a workflow re-checks it and opens a pull request for review. Nothing is sent anywhere until you press Submit on that issue.</p>
+<p class="lede">Define a new environmental water requirement and watch it join the EWR tool's parameter sheet. The sheet below is a copy of the upstream <code>parameter_sheet.csv</code>; each rule you add is validated in your browser and appended as <code>U_</code> rows, with a matching <code>ewr_calc_config.json</code> entry. You can also remove existing rows: use <strong>Delete</strong> in the preview table. Then either download the merged files to use with <code>py_ewr</code> yourself, or <strong>Submit to repository</strong> to propose the rule: that opens a pre-filled GitHub issue (you need a GitHub account), and a workflow re-checks it and opens a pull request for review. Nothing is sent anywhere until you press Submit on that issue.</p>
 <div class="stats" aria-live="polite">
   <div class="stat" id="sBase">–<small>upstream rows</small></div>
   <div class="stat" id="sMine">0<small>rows you added</small></div>
+  <div class="stat" id="sDel">0<small>rows to delete</small></div>
   <div class="stat" id="sTotal">–<small>rows in merged sheet</small></div>
 </div>
 <div id="loadErr" class="err" role="alert"></div>
@@ -85,12 +88,12 @@
 </form>
 </div>
 <div>
-<section><h2>Your EWRs</h2><div id="mine"><span class="hint">None yet.</span></div>
+<section><h2>Your EWRs</h2><div id="mine"><span class="hint">None yet.</span></div><div id="pending"></div>
   <div class="bar" style="margin-top:12px"><button type="button" id="dlCsv" disabled>Download merged sheet (CSV)</button><button type="button" id="dlCfg" disabled>Download calc config (JSON)</button><button type="button" id="submitPr" disabled>Submit to repository</button><button type="button" class="ghost" id="dlJson" disabled>Export definitions (JSON)</button><button type="button" class="ghost" id="imp">Import JSON</button><input type="file" id="impFile" accept=".json,application/json" hidden></div>
-  <p class="hint">Definitions are remembered in this browser only. <b>Download merged sheet</b> and <b>Download calc config</b> give the two files py_ewr needs: pass them as the <code>parameter_sheet</code> and <code>calc_config_path</code> arguments of its evaluation functions. The CSV is written as Windows-1252, as py_ewr reads it. <b>Submit to repository</b> proposes the rules for inclusion upstream via an issue and an automatic pull request; very large submissions are copied to your clipboard to paste into the issue instead. <b>Export / Import JSON</b> saves and restores your definitions.</p>
+  <p class="hint">Definitions are remembered in this browser only. <b>Download merged sheet</b> and <b>Download calc config</b> give the two files py_ewr needs: pass them as the <code>parameter_sheet</code> and <code>calc_config_path</code> arguments of its evaluation functions. The CSV is written as Windows-1252, as py_ewr reads it. <b>Submit to repository</b> proposes the rules for inclusion upstream via an issue and an automatic pull request; very large submissions are copied to your clipboard to paste into the issue instead. <b>Export / Import JSON</b> saves and restores your definitions and pending deletions. Deleting every row of an EWR also removes its calc-config entries.</p>
 </section>
 <section><h2>Parameter sheet preview</h2>
-  <div class="bar" style="margin-bottom:8px"><input id="filter" placeholder="Filter by gauge, code or planning unit" style="max-width:320px"><label style="margin:0"><input type="checkbox" id="onlyMine" style="width:auto"> only my rows</label></div>
+  <div class="bar" style="margin-bottom:8px"><button type="button" class="ghost" id="delAll" hidden></button><input id="filter" placeholder="Filter by gauge, code or planning unit" style="max-width:320px"><label style="margin:0"><input type="checkbox" id="onlyMine" style="width:auto"> only my rows</label></div>
   <div class="scroll"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
   <p class="hint" id="shown"></p>
 </section>
@@ -101,10 +104,10 @@
 <script src="ewr-core.js"></script>
 <script>
 "use strict";
-const STORE="ewrAdderSpecs";
+const STORE="ewrAdderSpecs", DSTORE="ewrAdderDeletions";
 let editing=null, CALC=null;
 // ---- UI -----------------------------------------------------------------------------------------------------------
-const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(specs));}catch{}};
+const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(specs));localStorage.setItem(DSTORE,JSON.stringify(deletions));}catch{}};
 function renderParams(vals={}){
   const f=fieldsFor($("kind").value,$("handler").value)||[], box=$("params");box.innerHTML="";
   for(const k of f){const [lo,hi]=B[k]||[], d=document.createElement("div");d.className="f";
@@ -126,15 +129,19 @@ function showErrors(e){document.querySelectorAll("[data-e]").forEach(n=>{n.textC
   for(const k of Object.keys(e)){const i=k.startsWith("params.")?$("p_"+k.slice(7)):$(k);if(i)i.setAttribute("aria-invalid","true");}}
 function renderMine(){
   $("mine").innerHTML=specs.length?[...specs].sort((a,b)=>a.code<b.code?-1:1).map(s=>`<div class="mine"><div><span class="chip">${esc(s.code)}</span> ${esc(s.name)}<div class="hint">Gauge ${esc(s.gauge)} · ${s.pus.length} planning unit${s.pus.length>1?"s":""} · ${esc(HANDLERS[s.kind][s.handler][0])}</div></div><div class="bar"><button type="button" class="ghost" data-edit="${s.id}">Edit</button><button type="button" class="ghost" data-del="${s.id}">Delete</button></div></div>`).join(""):'<span class="hint">None yet.</span>';
-  const n=myRows().length;$("sMine").firstChild.textContent=n;$("sTotal").firstChild.textContent=(BASE.length+n).toLocaleString();
-  $("dlCsv").disabled=$("dlJson").disabled=$("submitPr").disabled=$("dlCfg").disabled=!specs.length;renderTable();}
+  const n=myRows().length,live=liveBase().length;$("sMine").firstChild.textContent=n;$("sDel").firstChild.textContent=deletions.length;$("sTotal").firstChild.textContent=(live+n).toLocaleString();
+  const byCode=new Map();for(const d of deletions)byCode.set(d.code,(byCode.get(d.code)||0)+1);
+  $("pending").innerHTML=byCode.size?"<h3>Marked for deletion</h3>"+[...byCode].sort().map(([c,k])=>`<div class="mine"><div><span class="chip">${esc(c)}</span> <span class="hint">${k} row${k>1?"s":""}${gone.has(c)?" · whole EWR (its calc-config entries go too)":""}</span></div><button type="button" class="ghost" data-undo="${esc(c)}">Undo</button></div>`).join(""):"";
+  $("dlCsv").disabled=$("dlJson").disabled=$("submitPr").disabled=$("dlCfg").disabled=!(specs.length||deletions.length);renderTable();}
 function renderTable(){
   const q=$("filter").value.trim().toLowerCase(),only=$("onlyMine").checked,cols=["Code","Gauge","PlanningUnitName","FlowLevelVolume","StartMonth","EndMonth","Duration","MinSpell","FlowThresholdMin","FlowThresholdMax","TargetFrequency","EventsPerYear"],ix=cols.map(col);
-  $("thead").innerHTML=cols.map(c=>`<th>${c}</th>`).join("");
-  const mine=myRows().map(x=>({r:x.r,n:true})),all=only?mine:[...BASE.map(r=>({r,n:false})),...mine];
+  $("thead").innerHTML="<th></th>"+cols.map(c=>`<th>${c}</th>`).join("");
+  const gs=new Set(deletions.map(delKey)),B=r=>({r,n:false,d:gs.has(rowKey(r))});
+  const mine=myRows().map(x=>({r:x.r,n:true})),all=only?mine:[...BASE.map(B),...mine];
   const hit=q?all.filter(x=>x.r.some((v,i)=>[col("Code"),col("Gauge"),col("PlanningUnitName"),col("CompliancePoint/Node")].includes(i)&&v.toLowerCase().includes(q))):all;
-  const show=(q||only?hit:[...mine].reverse().concat(BASE.map(r=>({r,n:false})))).slice(0,300);
-  $("tbody").innerHTML=show.map(x=>`<tr class="${x.n?"new":""}">${ix.map(i=>`<td>${esc(x.r[i])}</td>`).join("")}</tr>`).join("");
+  const show=(q||only?hit:[...mine].reverse().concat(BASE.map(B))).slice(0,300);
+  const fresh=hit.filter(x=>!x.n&&!x.d);$("delAll").hidden=!q||only||!fresh.length;$("delAll").textContent=`Mark all ${fresh.length} matching rows for deletion`;$("delAll").dataset.n=fresh.length;
+  $("tbody").innerHTML=show.map(x=>`<tr class="${x.n?"new":x.d?"gone":""}"><td>${x.n?"":`<button type="button" class="ghost" data-row="${esc(rowKey(x.r))}">${x.d?"Undo":"Delete"}</button>`}</td>${ix.map(i=>`<td>${esc(x.r[i])}</td>`).join("")}</tr>`).join("");
   $("shown").textContent=`Showing ${show.length.toLocaleString()} of ${(q||only?hit.length:all.length).toLocaleString()} rows.`+(mine.length?" Your rows are highlighted.":"");}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function say(t){$("msg").textContent=t;}
@@ -152,6 +159,7 @@ async function init(){
   $("gaugeList").innerHTML=[...byGauge].map(([id,m])=>`<option value="${esc(id)}">${esc([...m.values()][0][col("CompliancePoint/Node")])}</option>`).join("");
   $("objList").innerHTML=[...objs].sort().map(o=>`<option value="${esc(o)}">`).join("");
   $("sBase").firstChild.textContent=BASE.length.toLocaleString();
+  try{setDeletions(checkDeletions(JSON.parse(localStorage.getItem(DSTORE)||"[]")).ok);}catch{setDeletions([]);}
   try{specs=JSON.parse(localStorage.getItem(STORE)||"[]").filter(s=>validate(s).spec);}catch{specs=[];}
   fillHandlers();renderParams();renderMine();
 }
@@ -166,15 +174,25 @@ $("clearBtn").onclick=clearForm;
 $("mine").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
   if(b.dataset.edit){const s=specs.find(x=>x.id===b.dataset.edit);if(s){load(s);$("form").dataset.touched="";window.scrollTo({top:0,behavior:"smooth"});}}
   if(b.dataset.del){const s=specs.find(x=>x.id===b.dataset.del);if(s&&confirm(`Delete ${s.code}? Its rows leave the merged sheet.`)){specs=specs.filter(x=>x!==s);save();renderMine();}}});
+const keyToDel=k=>{const [code,gauge,pu]=k.split("|");return {code,gauge,pu};};
+function markDeletions(list,on){
+  const g=new Set(list.map(delKey)),next=on?[...deletions,...list.filter(d=>!deletions.some(x=>delKey(x)===delKey(d)))]:deletions.filter(d=>!g.has(delKey(d)));
+  if(next.length>MAX_DELETIONS){say(`At most ${MAX_DELETIONS} rows can be deleted in one submission.`);return;}
+  setDeletions(next);save();renderMine();}
+$("tbody").addEventListener("click",ev=>{const b=ev.target.closest("button[data-row]");if(!b)return;const d=keyToDel(b.dataset.row);markDeletions([d],!deletions.some(x=>delKey(x)===delKey(d)));});
+$("delAll").onclick=()=>{const n=+$("delAll").dataset.n;if(!confirm(`Mark ${n} rows for deletion? You can undo this before submitting.`))return;
+  const q=$("filter").value.trim().toLowerCase(),ks=[col("Code"),col("Gauge"),col("PlanningUnitName"),col("CompliancePoint/Node")];
+  markDeletions(BASE.filter(r=>ks.some(i=>r[i].toLowerCase().includes(q))).map(r=>({code:r[col("Code")],gauge:r[col("Gauge")],pu:r[col("PlanningUnitID")]})),true);};
+$("pending").addEventListener("click",ev=>{const b=ev.target.closest("button[data-undo]");if(b)markDeletions(deletions.filter(d=>d.code===b.dataset.undo),false);});
 $("filter").oninput=renderTable;$("onlyMine").onchange=renderTable;
-$("dlCsv").onclick=()=>download("parameter_sheet_with_user_ewrs.csv",cp1252(toCsv([HEAD,...BASE,...myRows().map(x=>x.r)])),"text/csv");
-$("dlJson").onclick=()=>download("user_ewrs.json",JSON.stringify({format:"ewr-adder-definitions",version:1,specs},null,2),"application/json");
-$("dlCfg").onclick=()=>{if(!CALC){say("Could not load ewr_calc_config.json.");return;}download("ewr_calc_config_with_user_ewrs.json",addCalcEntries(CALC,specs),"application/json");};
+$("dlCsv").onclick=()=>download("parameter_sheet_with_user_ewrs.csv",cp1252(toCsv([HEAD,...liveBase(),...myRows().map(x=>x.r)])),"text/csv");
+$("dlJson").onclick=()=>download("user_ewrs.json",JSON.stringify({format:"ewr-adder-definitions",version:1,specs,deletions},null,2),"application/json");
+$("dlCfg").onclick=()=>{if(!CALC){say("Could not load ewr_calc_config.json.");return;}download("ewr_calc_config_with_user_ewrs.json",addCalcEntries(removeCalcCodes(CALC),specs),"application/json");};
 const REPO="aracingcar/ewr-adder";
 $("submitPr").onclick=async()=>{
-  const defs=JSON.stringify({format:"ewr-adder-definitions",version:1,specs}),
+  const defs=JSON.stringify({format:"ewr-adder-definitions",version:1,specs,deletions}),
     body="Submitted from the EWR adder page. A workflow validates this and opens a pull request.\n\n```json\n"+defs+"\n```\n",
-    title="New EWR: "+specs.map(s=>s.code).sort().join(", "),
+    title="EWR change: "+[specs.length?"add "+specs.map(s=>s.code).sort().join(", "):"",deletions.length?"delete "+[...new Set(deletions.map(d=>d.code))].sort().join(", "):""].filter(Boolean).join("; "),
     url=`https://github.com/${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   if(url.length<7000){window.open(url,"_blank","noopener");say("Opened a pre-filled GitHub issue; press Submit new issue there.");return;}
   try{await navigator.clipboard.writeText(body);say("Definitions copied. Paste them as the issue body on the page that opened.");}
@@ -184,7 +202,8 @@ $("imp").onclick=()=>$("impFile").click();
 $("impFile").onchange=async()=>{const f=$("impFile").files[0];$("impFile").value="";if(!f)return;
   try{if(f.size>256*1024)throw "File is over 256 KiB";const j=JSON.parse(await f.text());
     if(j?.format!=="ewr-adder-definitions"||j.version!==1||!Array.isArray(j.specs))throw "Not an EWR adder definitions file";
-    let added=0,skipped=[];for(const s of j.specs){const {e,spec}=validate({...s,id:null});
+    let added=0,skipped=[];if(Array.isArray(j.deletions)){const c=checkDeletions(j.deletions);skipped.push(...c.bad);setDeletions([...deletions,...c.ok.filter(d=>!deletions.some(x=>delKey(x)===delKey(d)))].slice(0,MAX_DELETIONS));}
+    for(const s of j.specs){const {e,spec}=validate({...s,id:null});
       if(spec){specs.push(spec);added++;}else skipped.push(((s&&s.code)||"?")+" ("+Object.values(e)[0]+")");}
     save();renderMine();say(`Imported ${added}${skipped.length?"; skipped "+skipped.join(", "):""}.`);}
   catch(x){say("Import failed: "+(x.message||x));}};

@@ -9,10 +9,11 @@ A browser page for defining new, user-defined (`U_`) environmental water require
 - Lets you pick a gauge, planning units, objectives, a rule type and its parameters, and validates everything
   (code format and uniqueness, bounds, timing windows, handler-specific requirements, salinity conversion).
 - Shows the resulting parameter-sheet rows live, highlighted in a preview of the merged sheet.
+- **Deleting existing rows:** each row of the preview has a Delete button (and a filtered view can mark all matching rows). Rows are identified by Code + Gauge + PlanningUnitID, shown struck through until submitted, listed under "Marked for deletion" with Undo, and limited to 500 per submission. If a code loses all its rows, its `ewr_calc_config.json` keys are removed too and the code can be reused.
 - **Download merged sheet (CSV)** and **Download calc config (JSON)** produce the two files py_ewr needs. Use them via the
   `parameter_sheet` and `calc_config_path` arguments of its evaluation functions. The CSV is Windows-1252, as py_ewr reads it.
 - **Export / Import JSON** saves and restores your definitions. They are also remembered in the browser's local storage.
-- **Submit to repository** opens a pre-filled GitHub issue (see below). Nothing leaves the browser until the issue is submitted.
+- **Submit to repository** opens a pre-filled GitHub issue (see below), covering both added and deleted rows. Nothing leaves the browser until the issue is submitted.
 
 ## Files
 
@@ -27,11 +28,11 @@ To resync the copies from upstream: `cp py_ewr/parameter_metadata/parameter_shee
 
 ## Submitting to the repository
 
-1. **Submit to repository** opens a new issue on `aracingcar/ewr-adder` titled `New EWR: …` with the definitions as JSON.
+1. **Submit to repository** opens a new issue on `aracingcar/ewr-adder` titled `EWR change: …` (the older `New EWR:` prefix also works) with the definitions and deletions as JSON.
    If that is too long for a URL (about 7 KB), the body is copied to the clipboard to paste instead.
-2. `.github/workflows/new-ewr.yml` runs `.github/scripts/add_ewr.mjs` on issues whose title starts with `New EWR:`.
+2. `.github/workflows/new-ewr.yml` runs `.github/scripts/add_ewr.mjs` on issues whose title starts with `EWR change:`.
    It re-validates the definitions with `ewr-core.js` (the same code as the page) against the current sheet.
-3. If valid, it appends the rows to `py_ewr/parameter_metadata/parameter_sheet.csv` and adds a `<Code>-<single|multigauge>-<F|V|L>`
+3. If valid, it removes any deleted rows (and now-unused calc-config keys), appends the new rows to `py_ewr/parameter_metadata/parameter_sheet.csv` and adds a `<Code>-<single|multigauge>-<F|V|L>`
    entry under the right handler in `ewr_calc_config.json`, updates the copies here, and opens a pull request that closes the issue.
    If invalid, it comments with the reason and closes the issue.
 

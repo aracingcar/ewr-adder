@@ -22,7 +22,7 @@ const TARGETS=["TargetFrequency","TargetFrequencyMin","TargetFrequencyMax"];
 const CODE_RE=/^U_[A-Za-z0-9]{1,20}(_[A-Za-z0-9]{1,8})?$/;
 const HIDDEN=["PlanningUnitID","PlanningUnitName","LTWPShortName","CompliancePoint/Node","Gauge","State","SWSDLName","Catchment_BPRegion","GaugeType","Latitude","Longitude"];
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let HEAD=[], BASE=[], specs=[], byGauge=new Map(), codes=new Set(), objs=new Set();
+let HEAD=[], BASE=[], specs=[], byGauge=new Map(), codes=new Set(), objs=new Set(), deletions=[], gone=new Set();
 
 // ---- CSV ----------------------------------------------------------------------------------------------------------
 function parseCsv(t){const rows=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
@@ -46,7 +46,7 @@ function validate(d){
   const kind=d.kind,h=HANDLERS[kind]?.[d.handler];
   if(!h)e.handler="Rule type is not offered for this kind";
   if(!CODE_RE.test(d.code||""))e.code="Use U_ then 1–20 letters/digits and an optional _suffix; no hyphens";
-  else if(codes.has(d.code)||specs.some(s=>s.code===d.code&&s.id!==d.id))e.code="Code is already in use";
+  else if((codes.has(d.code)&&!gone.has(d.code))||specs.some(s=>s.code===d.code&&s.id!==d.id))e.code="Code is already in use";
   if(!d.name||!d.name.trim()||d.name.length>80)e.name="A name of 1–80 characters is required";
   const pus=byGauge.get(d.gauge);
   if(!pus)e.gauge="Choose a gauge that appears in the parameter sheet";
@@ -132,4 +132,37 @@ function addCalcEntries(text,specs){
     text=text.slice(0,end)+`,\n        "${key}"`+text.slice(end);
   }
   JSON.parse(text);return text;
+}
+
+// ---- deleting existing rows -----------------------------------------------------------------------------------------
+// A row is identified by Code + Gauge + PlanningUnitID, which is unique in the sheet.
+const rowKey=r=>r[col("Code")]+"|"+r[col("Gauge")]+"|"+r[col("PlanningUnitID")];
+const delKey=d=>d.code+"|"+d.gauge+"|"+d.pu;
+const MAX_DELETIONS=500;
+// Keeps only entries that name a row present in the sheet; returns {ok, bad}.
+function checkDeletions(list){
+  const have=new Set(BASE.map(rowKey)), seen=new Set(), ok=[], bad=[];
+  for(const d of list){
+    const k=d&&typeof d.code==="string"&&typeof d.gauge==="string"&&typeof d.pu==="string"?delKey(d):null;
+    if(!k||!have.has(k)){bad.push(d&&String(d.code).slice(0,30)+" (not in the sheet)");continue;}
+    if(!seen.has(k)){seen.add(k);ok.push({code:d.code,gauge:d.gauge,pu:d.pu});}}
+  if(ok.length>MAX_DELETIONS)bad.push("Too many rows to delete in one go (limit "+MAX_DELETIONS+")");
+  return {ok,bad};
+}
+// Sets the pending deletions and works out which codes lose every row (they become reusable and their calc-config keys go).
+function setDeletions(list){
+  deletions=list;const gs=new Set(list.map(delKey)),left=new Set();
+  for(const r of BASE)if(!gs.has(rowKey(r)))left.add(r[col("Code")]);
+  gone=new Set([...codes].filter(c=>!left.has(c)));
+}
+const liveBase=()=>{const g=new Set(deletions.map(delKey));return g.size?BASE.filter(r=>!g.has(rowKey(r))):BASE;};
+// Removes the deleted rows from raw CSV text line by line, so every other byte is untouched.
+function dropRows(text){
+  const g=new Set(deletions.map(delKey));if(!g.size)return text;
+  return text.split(/(?<=\n)/).filter((l,i)=>{if(!i)return true;const rows=parseCsv(l);if(rows.length!==1)throw new Error("Unexpected multi-line CSV row");return !g.has(rowKey(rows[0]));}).join("");
+}
+// Removes every calc-config key belonging to codes that no longer have any rows.
+function removeCalcCodes(text){
+  for(const c of gone){const re=new RegExp('^[ \\t]*"'+c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+'-(single|multigauge)-[FVL]",?[ \\t]*\\r?\\n','gm');text=text.replace(re,"");}
+  text=text.replace(/,(\s*\n\s*\])/g,"$1");JSON.parse(text);return text;
 }

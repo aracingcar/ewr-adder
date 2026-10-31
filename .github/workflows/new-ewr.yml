@@ -1,4 +1,4 @@
-name: New EWR from issue
+name: EWR change from issue
 
 on:
   issues:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   add-ewr:
-    if: startsWith(github.event.issue.title, 'New EWR:')
+    if: startsWith(github.event.issue.title, 'EWR change:') || startsWith(github.event.issue.title, 'New EWR:')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +41,8 @@ jobs:
           git checkout -b "$branch"
           git add py_ewr/parameter_metadata/parameter_sheet.csv create_new_ewr/parameter_sheet.csv \
             py_ewr/parameter_metadata/ewr_calc_config.json create_new_ewr/ewr_calc_config.json
-          git commit -m "Add user-defined EWR(s): $CODES"
+          git commit -m "$CODES"
           git push origin "$branch"
           printf '%s\n\nCloses #%s\n' "$(cat result.md)" "${{ github.event.issue.number }}" > body.md
           gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" \
-            --title "Add user-defined EWR(s): $CODES" --body-file body.md
+            --title "$CODES" --body-file body.md
